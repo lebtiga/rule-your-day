@@ -122,25 +122,42 @@ export default function App() {
     <div className={`min-h-screen flex flex-col ${darkMode ? 'dark' : ''}`}>
       <div className="bg-gray-50 dark:bg-gray-900 flex-1 text-gray-900 dark:text-gray-100">
         <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow">
-          <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <LayoutGrid className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <h1 className="text-xl font-bold">Rule Your Day</h1>
+          <div className="max-w-7xl mx-auto px-4 py-2 sm:py-3 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <LayoutGrid className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <h1 className="text-lg sm:text-xl font-bold">Rule Your Day</h1>
+                </div>
+                <div className="flex items-center gap-2 sm:hidden">
+                  <button
+                    onClick={toggleDarkMode}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    {darkMode ? (
+                      <Sun className="w-4 h-4" />
+                    ) : (
+                      <Moon className="w-4 h-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={startNewDay}
+                    className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span className="hidden xs:inline">New Day</span>
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-6">
-                <button
-                  onClick={startNewDay}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Start New Day
-                </button>
-                <div className="flex items-center gap-4">
-                  <span className="text-lg font-medium text-gray-600 dark:text-gray-400">
+              
+              <div className="flex items-center justify-between sm:justify-end gap-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">
                     {formatDate(new Date())}
                   </span>
                   <DigitalClock />
+                </div>
+                <div className="hidden sm:flex items-center gap-4">
                   <button
                     onClick={toggleDarkMode}
                     className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -150,6 +167,13 @@ export default function App() {
                     ) : (
                       <Moon className="w-5 h-5" />
                     )}
+                  </button>
+                  <button
+                    onClick={startNewDay}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Start New Day
                   </button>
                 </div>
               </div>
