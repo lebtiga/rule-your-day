@@ -5,7 +5,7 @@ import { TaskPriority } from './components/TaskPriority';
 import { Analytics } from './components/Analytics';
 import { DigitalClock } from './components/DigitalClock';
 import { WaterIntakeTracker } from './components/WaterIntakeTracker';
-import { ZenGarden } from './components/ZenGarden';
+import { MemoryMatch } from './components/MemoryMatch';
 import { Footer } from './components/Footer';
 import { TimeBlock, PriorityTask } from './types';
 
@@ -193,7 +193,7 @@ export default function App() {
             <div className="space-y-6">
               <Analytics blocks={blocks} tasks={tasks} />
               <WaterIntakeTracker />
-              <ZenGarden />
+              <MemoryMatch />
             </div>
           </div>
         </main>
