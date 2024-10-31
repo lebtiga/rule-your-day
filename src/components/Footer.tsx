@@ -26,6 +26,7 @@ const quotes = [
 
 export function Footer() {
   const [quote, setQuote] = useState(quotes[0]);
+  const [showFullQuote, setShowFullQuote] = useState(false);
 
   useEffect(() => {
     const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
@@ -35,7 +36,37 @@ export function Footer() {
   return (
     <footer className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-6">
+        {/* Mobile View (< 768px) */}
+        <div className="flex md:hidden items-center justify-between w-full">
+          <button
+            onClick={() => setShowFullQuote(!showFullQuote)}
+            className="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+          >
+            <Quote className="w-4 h-4" />
+          </button>
+          <div className="text-xs text-center text-gray-500 dark:text-gray-400">
+            By{' '}
+            <a
+              href="https://x.com/RobRizk2020"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-indigo-600 dark:text-indigo-400"
+            >
+              Rabih Rizk
+            </a>
+          </div>
+          <a
+            href="https://buymeacoffee.com/robk"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+          >
+            <Coffee className="w-4 h-4" />
+          </a>
+        </div>
+
+        {/* Desktop View (≥ 768px) */}
+        <div className="hidden md:flex items-center gap-6">
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Quote className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             <span className="italic">"{quote.text}"</span>
@@ -56,7 +87,7 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-4">
           <div className="flex items-center gap-3">
             <a
               href="https://twitter.com/RobRizk2020"
@@ -87,6 +118,26 @@ export function Footer() {
           </a>
         </div>
       </div>
+
+      {/* Mobile Quote Popup */}
+      {showFullQuote && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/50 flex items-end justify-center p-4 z-50"
+          onClick={() => setShowFullQuote(false)}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-lg p-4 shadow-lg"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 italic">
+              "{quote.text}"
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-500 font-medium">
+              — {quote.author}
+            </div>
+          </div>
+        </div>
+      )}
     </footer>
   );
 }

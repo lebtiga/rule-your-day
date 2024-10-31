@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Moon, Sun, RefreshCw } from 'lucide-react';
+import { LayoutGrid, Moon, Sun, RefreshCw, Menu, X } from 'lucide-react';
 import { Timeline } from './components/Timeline';
 import { TaskPriority } from './components/TaskPriority';
 import { Analytics } from './components/Analytics';
@@ -13,6 +13,8 @@ export function App() {
     const saved = localStorage.getItem('darkMode');
     return saved !== null ? JSON.parse(saved) : true;
   });
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [tasks, setTasks] = useState<PriorityTask[]>(() => {
     const saved = localStorage.getItem('tasks');
@@ -59,6 +61,15 @@ export function App() {
     setDarkMode(!darkMode);
   };
 
+  const startNewDay = () => {
+    if (window.confirm('Are you sure you want to start a new day? This will clear all tasks and time blocks.')) {
+      setTasks([]);
+      setBlocks([]);
+      window.dispatchEvent(new Event('startNewDay'));
+    }
+  };
+
+  // Task management functions
   const toggleTaskCompletion = (taskId: string) => {
     setTasks(tasks.map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
@@ -79,6 +90,7 @@ export function App() {
     setTasks([...tasks, { ...newTask, id: Date.now().toString() }]);
   };
 
+  // Block management functions
   const handleBlockDrop = (blockId: string, hour: number) => {
     setBlocks(blocks.map(block =>
       block.id === blockId
@@ -107,39 +119,74 @@ export function App() {
     setBlocks(blocks.filter(block => block.id !== blockId));
   };
 
-  const startNewDay = () => {
-    if (window.confirm('Are you sure you want to start a new day? This will clear all tasks and time blocks.')) {
-      setTasks([]);
-      setBlocks([]);
-      window.dispatchEvent(new Event('startNewDay'));
-    }
-  };
-
   const completionRate = getTaskCompletionRate();
 
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'dark' : ''}`}>
       <div className="bg-gray-50 dark:bg-gray-900 flex-1 text-gray-900 dark:text-gray-100">
-        <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow">
-          <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <LayoutGrid className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <h1 className="text-xl font-bold">Rule Your Day</h1>
+        <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-lg">
+          <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+            {/* Logo - Always visible */}
+            <div className="flex items-center gap-3">
+              <LayoutGrid className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              <h1 className="text-xl font-bold hidden sm:block">Rule Your Day</h1>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-6">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {formatDate(new Date())}
+                </span>
+                <DigitalClock />
               </div>
-              <div className="flex items-center gap-6">
-                <button
-                  onClick={startNewDay}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Start New Day
-                </button>
-                <div className="flex items-center gap-4">
-                  <span className="text-lg font-medium text-gray-600 dark:text-gray-400">
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
+              <button
+                onClick={startNewDay}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Start New Day
+              </button>
+              <button
+                onClick={toggleDarkMode}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                {darkMode ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 dark:border-gray-700">
+              <div className="px-4 py-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     {formatDate(new Date())}
                   </span>
                   <DigitalClock />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={startNewDay}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Start New Day
+                  </button>
                   <button
                     onClick={toggleDarkMode}
                     className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -153,7 +200,11 @@ export function App() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-2">
+          )}
+
+          {/* Progress Bar - Always visible */}
+          <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
               <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Task Progress
               </div>
