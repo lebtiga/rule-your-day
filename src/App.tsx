@@ -4,7 +4,6 @@ import { Timeline } from './components/Timeline';
 import { TaskPriority } from './components/TaskPriority';
 import { Analytics } from './components/Analytics';
 import { DigitalClock } from './components/DigitalClock';
-import { QuoteDisplay } from './components/QuoteDisplay';
 import { WaterIntakeTracker } from './components/WaterIntakeTracker';
 import { Footer } from './components/Footer';
 import { TimeBlock, PriorityTask } from './types';
@@ -193,7 +192,6 @@ export function App() {
             <div className="space-y-6">
               <Analytics blocks={blocks} tasks={tasks} />
               <WaterIntakeTracker />
-              <QuoteDisplay />
             </div>
           </div>
         </main>
