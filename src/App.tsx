@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Moon, Sun, RefreshCw } from 'lucide-react';
+import { Compass, Moon, Sun, RefreshCw } from 'lucide-react';
 import { Timeline } from './components/Timeline';
 import { TaskPriority } from './components/TaskPriority';
 import { Analytics } from './components/Analytics';
@@ -33,20 +33,6 @@ export default function App() {
     localStorage.setItem('blocks', JSON.stringify(blocks));
   }, [blocks]);
 
-  const getTaskCompletionRate = () => {
-    if (tasks.length === 0) return 0;
-    const completed = tasks.filter(task => task.completed).length;
-    return Math.round((completed / tasks.length) * 100);
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -58,6 +44,22 @@ export default function App() {
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
+  };
+
+  const startNewDay = () => {
+    if (window.confirm('Are you sure you want to start a new day? This will clear all tasks and time blocks.')) {
+      setTasks([]);
+      setBlocks([]);
+      window.dispatchEvent(new Event('startNewDay'));
+    }
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   const toggleTaskCompletion = (taskId: string) => {
@@ -108,15 +110,9 @@ export default function App() {
     setBlocks(blocks.filter(block => block.id !== blockId));
   };
 
-  const startNewDay = () => {
-    if (window.confirm('Are you sure you want to start a new day? This will clear all tasks and time blocks.')) {
-      setTasks([]);
-      setBlocks([]);
-      window.dispatchEvent(new Event('startNewDay'));
-    }
-  };
-
-  const completionRate = getTaskCompletionRate();
+  const completionRate = tasks.length > 0
+    ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100)
+    : 0;
 
   return (
     <div className={`min-h-screen flex flex-col ${darkMode ? 'dark' : ''}`}>
@@ -125,9 +121,14 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-4 py-2 sm:py-3 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <LayoutGrid className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  <h1 className="text-lg sm:text-xl font-bold">Rule Your Day</h1>
+                <div className="flex items-center gap-2.5">
+                  <div className="relative">
+                    <Compass className="w-6 h-6 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+                    <div className="absolute inset-0 bg-indigo-400/20 dark:bg-indigo-600/20 rounded-full blur-sm animate-ping" />
+                  </div>
+                  <h1 className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400 text-transparent bg-clip-text font-display">
+                    RuleYour<span className="text-indigo-600 dark:text-indigo-400">.</span>Day
+                  </h1>
                 </div>
                 <div className="flex items-center gap-2 sm:hidden">
                   <button
