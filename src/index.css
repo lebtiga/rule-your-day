@@ -22,6 +22,38 @@
   }
 }
 
+@keyframes wave {
+  0% {
+    transform: translateX(0) translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateX(-25%) translateY(2%) rotate(2deg);
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotate(0);
+  }
+}
+
+@keyframes wave-reverse {
+  0% {
+    transform: translateX(0) translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateX(25%) translateY(-2%) rotate(-2deg);
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotate(0);
+  }
+}
+
+.animate-wave {
+  animation: wave 3s ease-in-out infinite;
+}
+
+.animate-wave-reverse {
+  animation: wave-reverse 3s ease-in-out infinite;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
