@@ -49,7 +49,19 @@ export default function App() {
 
   const startNewDay = () => {
     if (window.confirm('Are you sure you want to start a new day? This will clear all tasks and time blocks.')) {
-      setTasks([]);
+      // Handle recurring tasks
+      const recurringTasks = tasks.filter(task => task.recurring);
+      const newRecurringTasks = recurringTasks.map(task => ({
+        ...task,
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        completed: false,
+        recurring: {
+          ...task.recurring!,
+          parentId: task.recurring?.parentId || task.id
+        }
+      }));
+
+      setTasks(newRecurringTasks);
       setBlocks([]);
       window.dispatchEvent(new Event('startNewDay'));
     }
@@ -75,8 +87,18 @@ export default function App() {
     ));
   };
 
-  const deleteTask = (taskId: string) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
+  const deleteTask = (taskId: string, deleteEntireSeries?: boolean) => {
+    if (deleteEntireSeries) {
+      const taskToDelete = tasks.find(t => t.id === taskId);
+      if (taskToDelete?.recurring) {
+        const parentId = taskToDelete.recurring.parentId || taskId;
+        setTasks(tasks.filter(task => 
+          !(task.recurring?.parentId === parentId || task.id === parentId)
+        ));
+      }
+    } else {
+      setTasks(tasks.filter(task => task.id !== taskId));
+    }
   };
 
   const addTask = (newTask: Omit<PriorityTask, 'id'>) => {

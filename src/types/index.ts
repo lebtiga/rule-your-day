@@ -5,7 +5,7 @@ export interface TimeBlock {
   title: string;
   category: Category;
   startTime: string;
-  duration: number; // in minutes
+  duration: number;
   completed: boolean;
 }
 
@@ -22,10 +22,17 @@ export interface Activity {
   duration: number;
 }
 
+export interface RecurringConfig {
+  parentId: string | null;
+  frequency: 'daily';
+  startDate: string;
+}
+
 export interface PriorityTask {
   id: string;
   title: string;
   completed: boolean;
   category: Category;
   isTopPriority: boolean;
+  recurring?: RecurringConfig;
 }

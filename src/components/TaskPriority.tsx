@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { PriorityTask, Category } from '../types';
-import { Star, CheckCircle2, Circle, Edit2, X, Plus, Trash2 } from 'lucide-react';
+import { PriorityTask, Category, RecurringConfig } from '../types';
+import { Star, CheckCircle2, Circle, Edit2, X, Plus, Trash2, Repeat, AlertCircle } from 'lucide-react';
 
 interface TaskPriorityProps {
   tasks: PriorityTask[];
   onTaskToggle: (id: string) => void;
   onTaskUpdate: (id: string, updates: Partial<PriorityTask>) => void;
-  onTaskDelete: (id: string) => void;
+  onTaskDelete: (id: string, deleteEntireSeries?: boolean) => void;
   onTaskAdd: (task: Omit<PriorityTask, 'id'>) => void;
 }
 
@@ -14,11 +14,13 @@ export function TaskPriority({ tasks, onTaskToggle, onTaskUpdate, onTaskDelete, 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isAddingTopPriority, setIsAddingTopPriority] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState<{ id: string; isRecurring: boolean } | null>(null);
   const [newTask, setNewTask] = useState({
     title: '',
     category: 'work' as Category,
     completed: false,
     isTopPriority: false,
+    recurring: undefined as RecurringConfig | undefined,
   });
 
   const categories: Category[] = ['work', 'self-care', 'family', 'health', 'social', 'other'];
@@ -28,16 +30,77 @@ export function TaskPriority({ tasks, onTaskToggle, onTaskUpdate, onTaskDelete, 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTask.title.trim()) {
-      onTaskAdd(newTask);
+      const taskToAdd = { ...newTask };
+      if (taskToAdd.recurring) {
+        taskToAdd.recurring = {
+          parentId: null,
+          frequency: 'daily',
+          startDate: new Date().toISOString().split('T')[0],
+        };
+      }
+      onTaskAdd(taskToAdd);
       setNewTask({
         title: '',
         category: 'work',
         completed: false,
         isTopPriority: false,
+        recurring: undefined,
       });
       setIsAddingTask(false);
       setIsAddingTopPriority(false);
     }
+  };
+
+  const handleDeleteClick = (taskId: string, isRecurring: boolean) => {
+    if (isRecurring) {
+      setShowDeleteModal({ id: taskId, isRecurring });
+    } else {
+      onTaskDelete(taskId);
+    }
+  };
+
+  const DeleteModal = () => {
+    if (!showDeleteModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="flex items-center gap-2 text-amber-500 mb-4">
+            <AlertCircle className="w-5 h-5" />
+            <h3 className="text-lg font-semibold">Delete Recurring Task</h3>
+          </div>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            Would you like to delete just this instance or the entire recurring series?
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowDeleteModal(null)}
+              className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                onTaskDelete(showDeleteModal.id, false);
+                setShowDeleteModal(null);
+              }}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
+            >
+              This Instance
+            </button>
+            <button
+              onClick={() => {
+                onTaskDelete(showDeleteModal.id, true);
+                setShowDeleteModal(null);
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+            >
+              Entire Series
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const TaskSection = ({ title, tasks, icon }: { title: string; tasks: PriorityTask[]; icon: React.ReactNode }) => (
@@ -95,6 +158,24 @@ export function TaskPriority({ tasks, onTaskToggle, onTaskUpdate, onTaskDelete, 
                   ))}
                 </select>
                 <button
+                  type="button"
+                  onClick={() => onTaskUpdate(task.id, { 
+                    recurring: task.recurring ? undefined : {
+                      parentId: null,
+                      frequency: 'daily',
+                      startDate: new Date().toISOString().split('T')[0],
+                    }
+                  })}
+                  className={`p-1 rounded-md transition-colors ${
+                    task.recurring
+                      ? 'text-indigo-600 dark:text-indigo-400'
+                      : 'text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+                  }`}
+                  title={task.recurring ? "Remove recurring" : "Make recurring"}
+                >
+                  <Repeat className="w-4 h-4" />
+                </button>
+                <button
                   type="submit"
                   className="p-1 text-green-500 hover:text-green-600 dark:text-green-400"
                 >
@@ -105,6 +186,9 @@ export function TaskPriority({ tasks, onTaskToggle, onTaskUpdate, onTaskDelete, 
               <>
                 <span className={`flex-1 ${task.completed ? 'line-through text-gray-500 dark:text-gray-400' : ''}`}>
                   {task.title}
+                  {task.recurring && (
+                    <Repeat className="w-4 h-4 inline ml-2 text-indigo-600 dark:text-indigo-400" />
+                  )}
                 </span>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
@@ -114,7 +198,7 @@ export function TaskPriority({ tasks, onTaskToggle, onTaskUpdate, onTaskDelete, 
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => onTaskDelete(task.id)}
+                    onClick={() => handleDeleteClick(task.id, !!task.recurring)}
                     className="p-1 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -156,19 +240,41 @@ export function TaskPriority({ tasks, onTaskToggle, onTaskUpdate, onTaskDelete, 
                 autoFocus
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
-              <select
-                value={newTask.category}
-                onChange={(e) => setNewTask({ ...newTask, category: e.target.value as Category })}
-                className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
-              >
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </option>
-                ))}
-              </select>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select
+                  value={newTask.category}
+                  onChange={(e) => setNewTask({ ...newTask, category: e.target.value as Category })}
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                >
+                  {categories.map(category => (
+                    <option key={category} value={category}>
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={() => setNewTask(prev => ({
+                    ...prev,
+                    recurring: prev.recurring ? undefined : {
+                      parentId: null,
+                      frequency: 'daily',
+                      startDate: new Date().toISOString().split('T')[0],
+                    }
+                  }))}
+                  className={`px-3 py-2 rounded-md border transition-colors ${
+                    newTask.recurring
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-400'
+                      : 'border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 dark:border-gray-600 dark:hover:border-indigo-400 dark:hover:bg-indigo-900/30'
+                  }`}
+                >
+                  <Repeat className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <button
@@ -181,6 +287,7 @@ export function TaskPriority({ tasks, onTaskToggle, onTaskUpdate, onTaskDelete, 
                     category: 'work',
                     completed: false,
                     isTopPriority: false,
+                    recurring: undefined,
                   });
                 }}
                 className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md"
@@ -223,6 +330,8 @@ export function TaskPriority({ tasks, onTaskToggle, onTaskUpdate, onTaskDelete, 
           Add New Task
         </button>
       )}
+
+      <DeleteModal />
     </div>
   );
 }
