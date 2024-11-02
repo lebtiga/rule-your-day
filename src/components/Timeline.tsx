@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TimeBlock, Category } from '../types';
-import { Clock, Plus, X, CheckCircle2, Circle, Edit2, Trash2 } from 'lucide-react';
+import { Clock, Plus, X, CheckCircle2, Circle, Edit2, Trash2, Repeat, AlertCircle } from 'lucide-react';
 
 interface TimelineProps {
   blocks: TimeBlock[];
@@ -8,7 +8,7 @@ interface TimelineProps {
   onBlockAdd: (block: Omit<TimeBlock, 'id'>) => void;
   onBlockComplete?: (blockId: string) => void;
   onBlockUpdate?: (blockId: string, updates: Partial<TimeBlock>) => void;
-  onBlockDelete?: (blockId: string) => void;
+  onBlockDelete?: (blockId: string, deleteEntireSeries?: boolean) => void;
 }
 
 export function Timeline({ 
@@ -23,11 +23,13 @@ export function Timeline({
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState<{ id: string; isRecurring: boolean } | null>(null);
   const [newBlock, setNewBlock] = useState({
     title: '',
     category: 'work' as Category,
     duration: 60,
     completed: false,
+    recurring: undefined as undefined | { parentId: null; frequency: 'daily'; startDate: string; }
   });
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -64,19 +66,62 @@ export function Timeline({
         category: 'work',
         duration: 60,
         completed: false,
+        recurring: undefined,
       });
     }
   };
 
-  const handleUpdateBlock = (blockId: string, updates: Partial<TimeBlock>) => {
-    onBlockUpdate?.(blockId, updates);
-  };
-
-  const handleDeleteBlock = (e: React.MouseEvent, blockId: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, blockId: string, isRecurring: boolean) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this block?')) {
+    if (isRecurring) {
+      setShowDeleteModal({ id: blockId, isRecurring });
+    } else {
       onBlockDelete?.(blockId);
     }
+  };
+
+  const DeleteModal = () => {
+    if (!showDeleteModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="flex items-center gap-2 text-amber-500 mb-4">
+            <AlertCircle className="w-5 h-5" />
+            <h3 className="text-lg font-semibold">Delete Recurring Block</h3>
+          </div>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            Would you like to delete just this instance or the entire recurring series?
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowDeleteModal(null)}
+              className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                onBlockDelete?.(showDeleteModal.id, false);
+                setShowDeleteModal(null);
+              }}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
+            >
+              This Instance
+            </button>
+            <button
+              onClick={() => {
+                onBlockDelete?.(showDeleteModal.id, true);
+                setShowDeleteModal(null);
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+            >
+              Entire Series
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const getBlocksForHour = (hour: number) => {
@@ -140,6 +185,27 @@ export function Timeline({
                   min="15"
                   step="15"
                 />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNewBlock(prev => ({
+                    ...prev,
+                    recurring: prev.recurring ? undefined : {
+                      parentId: null,
+                      frequency: 'daily',
+                      startDate: new Date().toISOString().split('T')[0],
+                    }
+                  }))}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors ${
+                    newBlock.recurring
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:border-indigo-400 dark:bg-indigo-900/30 dark:text-indigo-400'
+                      : 'border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 dark:border-gray-600 dark:hover:border-indigo-400 dark:hover:bg-indigo-900/30'
+                  }`}
+                >
+                  <Repeat className="w-4 h-4" />
+                  <span className="text-sm">Repeat Daily</span>
+                </button>
               </div>
               <button
                 type="submit"
@@ -211,13 +277,13 @@ export function Timeline({
                         <input
                           type="text"
                           value={block.title}
-                          onChange={(e) => handleUpdateBlock(block.id, { title: e.target.value })}
+                          onChange={(e) => onBlockUpdate?.(block.id, { title: e.target.value })}
                           className="flex-1 px-2 py-1 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600"
                           autoFocus
                         />
                         <select
                           value={block.category}
-                          onChange={(e) => handleUpdateBlock(block.id, { category: e.target.value as Category })}
+                          onChange={(e) => onBlockUpdate?.(block.id, { category: e.target.value as Category })}
                           className="px-2 py-1 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600"
                         >
                           <option value="work">Work</option>
@@ -230,11 +296,29 @@ export function Timeline({
                         <input
                           type="number"
                           value={block.duration}
-                          onChange={(e) => handleUpdateBlock(block.id, { duration: parseInt(e.target.value) })}
+                          onChange={(e) => onBlockUpdate?.(block.id, { duration: parseInt(e.target.value) })}
                           className="w-20 px-2 py-1 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600"
                           min="15"
                           step="15"
                         />
+                        <button
+                          type="button"
+                          onClick={() => onBlockUpdate?.(block.id, { 
+                            recurring: block.recurring ? undefined : {
+                              parentId: null,
+                              frequency: 'daily',
+                              startDate: new Date().toISOString().split('T')[0],
+                            }
+                          })}
+                          className={`p-1 rounded-md transition-colors ${
+                            block.recurring
+                              ? 'text-indigo-600 dark:text-indigo-400'
+                              : 'text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+                          }`}
+                          title={block.recurring ? "Remove recurring" : "Make recurring"}
+                        >
+                          <Repeat className="w-4 h-4" />
+                        </button>
                         <button
                           type="submit"
                           className="p-1 text-green-500 hover:text-green-600"
@@ -246,6 +330,9 @@ export function Timeline({
                       <>
                         <span className={`flex-1 ${block.completed ? 'line-through text-gray-500 dark:text-gray-400' : ''}`}>
                           {block.title}
+                          {block.recurring && (
+                            <Repeat className="w-4 h-4 inline ml-2 text-indigo-600 dark:text-indigo-400" />
+                          )}
                         </span>
                         <span className="text-xs ml-2">({block.duration}m)</span>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -259,7 +346,7 @@ export function Timeline({
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={(e) => handleDeleteBlock(e, block.id)}
+                            onClick={(e) => handleDeleteClick(e, block.id, !!block.recurring)}
                             className="p-1 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -274,6 +361,8 @@ export function Timeline({
           );
         })}
       </div>
+
+      <DeleteModal />
     </div>
   );
 }

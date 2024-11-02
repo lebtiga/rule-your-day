@@ -61,8 +61,20 @@ export default function App() {
         }
       }));
 
+      // Handle recurring blocks
+      const recurringBlocks = blocks.filter(block => block.recurring);
+      const newRecurringBlocks = recurringBlocks.map(block => ({
+        ...block,
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        completed: false,
+        recurring: {
+          ...block.recurring!,
+          parentId: block.recurring?.parentId || block.id
+        }
+      }));
+
       setTasks(newRecurringTasks);
-      setBlocks([]);
+      setBlocks(newRecurringBlocks);
       window.dispatchEvent(new Event('startNewDay'));
     }
   };
@@ -129,8 +141,18 @@ export default function App() {
     ));
   };
 
-  const handleBlockDelete = (blockId: string) => {
-    setBlocks(blocks.filter(block => block.id !== blockId));
+  const handleBlockDelete = (blockId: string, deleteEntireSeries?: boolean) => {
+    if (deleteEntireSeries) {
+      const blockToDelete = blocks.find(b => b.id === blockId);
+      if (blockToDelete?.recurring) {
+        const parentId = blockToDelete.recurring.parentId || blockId;
+        setBlocks(blocks.filter(block => 
+          !(block.recurring?.parentId === parentId || block.id === parentId)
+        ));
+      }
+    } else {
+      setBlocks(blocks.filter(block => block.id !== blockId));
+    }
   };
 
   const completionRate = tasks.length > 0
