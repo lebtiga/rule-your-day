@@ -7,6 +7,7 @@ import { DigitalClock } from './components/DigitalClock';
 import { WaterIntakeTracker } from './components/WaterIntakeTracker';
 import { MemoryMatch } from './components/MemoryMatch';
 import { Footer } from './components/Footer';
+import { PDFReport } from './components/PDFReport';
 import { TimeBlock, PriorityTask } from './types';
 
 export default function App() {
@@ -159,6 +160,7 @@ export default function App() {
                   <DigitalClock />
                 </div>
                 <div className="hidden sm:flex items-center gap-4">
+                  <PDFReport tasks={tasks} blocks={blocks} />
                   <button
                     onClick={toggleDarkMode}
                     className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
